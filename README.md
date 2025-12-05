@@ -80,7 +80,7 @@ This is one of the strongest and most predictable effects in moisture barrier en
 
 ---
 
-## 4.Physics-Informed WVTR Model -  
+## 4. Physics-Informed WVTR Model -  
 The synthetic WVTR model used in this project combines:
 
 - humidity-driven moisture loading  
