@@ -1,90 +1,150 @@
 ## FibreBarrier-ML
-Physics-Informed WVTR Modelling + Machine Learning Surrogate for Fibre-Based Packaging Barriers
-
-FibreBarrier-ML is a hybrid materials engineering + machine learning project that models the Water Vapour Transmission Rate (WVTR) of coated fibre-based packaging materials using:
-
-A physics-inspired moisture-transport approximation
-
-A synthetic dataset generation pipeline
-
-A high-accuracy machine learning surrogate model
-
-Visualization and performance analysis tools
+FibreBarrier-ML is a hybrid materials engineering + machine learning project that models the Water Vapour Transmission Rate (WVTR) of coated fibre-based packaging materials 
 
 This project demonstrates how physics-based assumptions can be combined with data-driven models to accelerate barrier coating development.
 
 ## 1. Project Motivation
 
-Moisture barrier performance is crucial in:
-
-moulded fibre packaging
-
-paper-based materials
-
-biodegradable polymer coatings
-
-pharmaceutical packaging
-
 Traditional WVTR testing requires specialized chambers and long conditioning times.
 With FibreBarrier-ML, barrier engineers can:
 
-perform rapid virtual WVTR predictions
+- Perform rapid virtual WVTR predictions
 
-explore design parameters (T, RH, coating weight)
+- Explore design parameters (T, RH, coating weight)
 
-understand sensitivity of WVTR to thickness and environmental conditions
+-  Understand sensitivity of WVTR to thickness and environmental conditions
 
-use ML as a surrogate for fast screening
+- Use ML as a surrogate for fast screening
 
-## 2. Physics-Inspired WVTR Generator
+## 2. Why This Project Matters
 
-A custom Python function generates synthetic WVTR data using three physical concepts:
+This project demonstrates an end-to-end materials informatics workflow:
 
-Humidity loading
+- Understanding the physics of moisture diffusion in coatings  
+- Identifying governing variables  
+- Building a physics-inspired surrogate model  
+- Generating a high-quality synthetic dataset  
+- Training ML models to replicate physical behaviour  
 
-WVTR increases with higher humidity levels.
+The project is easily extendable to multilayer coatings, different polymers, Arrhenius-based permeability modelling, sorption isotherms, or coupling with oxygen transmission rate (OTR) predictions.
 
-Temperature effect
+## 3. Scientific Background
 
-WVTR increases approximately linearly with temperature in typical packaging ranges.
+### 3.1. WVTR and Moisture Transport Physics  
+Water vapour transmission through polymer coatings is fundamentally a diffusion process.  
+In packaging applications, moisture tends to move from a high-humidity environment toward a lower-humidity region through the coating.  
 
-Coating thickness effect
+Three main factors govern this behaviour:
 
-Thicker coatings reduce WVTR by limiting water vapour diffusion.
+- **Diffusivity**: how easily water molecules move through the polymer  
+- **Solubility / sorption**: how strongly water molecules interact with the coating  
+- **Thickness**: thicker coatings create a longer path, reducing moisture flow  
 
-These relationships are combined into a simplified model to generate realistic WVTR trends without requiring laboratory testing.
+In practical terms:  
+**thicker coatings → slower vapour transport → lower WVTR.**
 
-A total of 3000 synthetic WVTR samples were generated within realistic industrial parameter ranges.
+This inverse relationship is widely validated in packaging science and is routinely used in the design of barrier films and multilayer structures.
 
-Dataset stored at:
+---
 
-data/wvtr_synthetic_data.csv
+### 3.2. Temperature Dependence  
+Polymer permeability increases with temperature.  
+As temperature rises:
 
-## 3. Machine Learning Surrogate Model
+- Molecular motion increases  
+- Vapour pressure increases  
+- Diffusion becomes faster  
 
-A Random Forest Regressor is trained to learn the nonlinear mapping:
+This causes **WVTR to rise significantly at higher temperatures**, a behaviour confirmed experimentally across many polymeric coatings.  
+Our synthetic model incorporates this trend through a temperature scaling factor.
 
-(T, Relative Humidity, Coating Weight) → WVTR
+---
 
-Model Performance
+### 3.3. Humidity / Mixing Ratio Effect  
+Relative humidity alone is not always the best predictor of moisture loading in air, so the literature introduces the concept of a “mixing ratio,” which quantifies the actual water content in the atmosphere.  
 
-R² = 0.973
+Experiments show a nearly linear connection between mixing ratio and WVTR:  
+**higher humidity → higher moisture load → higher WVTR.**
 
-Relative MAE ≈ 0.076 (~7.6%)
+This relationship is preserved in our synthetic generator.
 
-This means the model closely matches the behaviour of the physics-informed synthetic generator.
+---
 
-The trained surrogate can be used for:
+### 3.4. Coating Weight and Thickness  
+Coating weight (g/m²) is converted to an approximate film thickness using an assumed polymer density.  
+This allows the model to simulate how thicker or thinner barriers influence WVTR performance.  
 
-rapid prediction
+**Heavier coating → thicker barrier → lower WVTR.**
 
-materials screening
+This is one of the strongest and most predictable effects in moisture barrier engineering.
 
-optimisation studies
+---
 
-interactive design tools
+## 4.Physics-Informed WVTR Model -  
+The synthetic WVTR model used in this project combines:
 
-## 4. Results
+- humidity-driven moisture loading  
+- temperature effects  
+- coating thickness effects  
+- a global scaling constant to keep values realistic  
+- small random noise to simulate experimental scatter  
+
+This results in WVTR values that behave very similarly to actual measurements reported in packaging literature.
+
+The goal is not to recreate exact laboratory physics, but to build a **scientifically meaningful approximation** that generates realistic training data for machine learning.
+
+---
+
+## 5. Dataset Generation
+
+The notebook **01_generate_data.ipynb**:
+
+1. Samples realistic environmental and material parameters  
+   - Temperature: 20–60°C  
+   - Relative Humidity: 40–95%  
+   - Coating Weight: 10–60 g/m²  
+
+2. Computes physically motivated quantities (humidity load, thickness, etc.)
+
+3. Uses the simplified physics model to compute WVTR
+
+4. Saves the generated dataset to:
+
+data/synthetic_wvtr.csv
+
+A dataset of **3000 samples** is produced by default, but this can be easily increased.
+
+---
+
+   ## 6. Machine Learning Model
+
+The notebook **02_train_ml_model.ipynb** trains a regression model (Random Forest, optionally XGBoost) to learn the mapping between input parameters and WVTR.
+
+**Features used:**
+
+- Temperature  
+- Relative humidity  
+- Coating weight  
+
+**Target:**
+
+- WVTR  
+
+Expected performance on this dataset is extremely high because the underlying physics is well-defined and consistent:
+
+- R² typically between **0.97 and 0.99**  
+- Very low prediction error  
+
+Feature importance analysis usually reveals:
+
+1. Humidity (or its proxy, mixing ratio)  
+2. Coating weight / thickness  
+3. Temperature  
+
+This ordering matches real experimental trends.
+
+
+## 7. Results
 True vs Predicted WVTR
 
 ![WVTR Scatter Plot](figures/wvtr_scatter.png)
@@ -92,31 +152,14 @@ True vs Predicted WVTR
 
 The strong diagonal trend indicates:
 
-the ML model successfully captures WVTR behaviour
+- The ML model successfully captures WVTR behaviour
 
-predictions generalize well across the parameter space
+- Predictions generalize well across the parameter space
 
-the surrogate can replace slow physical simulations for early-stage analysis
+- The surrogate can replace slow physical simulations for early-stage analysis
 
-## 5. Repository Structure
-FibreBarrier-ML/
-│
-├── data/
-│   └── wvtr_synthetic_data.csv
-│
-├── notebooks/
-│   ├── 01_generate_data.ipynb
-│   └── 02_train_ml_model.ipynb
-│
-├── src/
-│   └── physics_wvtr.py
-│
-├── figures/
-│   └── wvtr_scatter.png
-│
-└── README.md
 
-## 6. Key Features
+## 8. Key Features
 
 ✓ Physics-inspired synthetic dataset
 
@@ -130,7 +173,7 @@ FibreBarrier-ML/
 
 ✓ Ready for research or industrial prototyping
 
-## 7. Future Work
+## 9. Future Work
 
 Multilayer barrier coating models
 
